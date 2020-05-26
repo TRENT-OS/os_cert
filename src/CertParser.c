@@ -418,6 +418,9 @@ CertParser_Cert_getAttrib(
     {
         return OS_ERROR_INVALID_PARAMETER;
     }
+
+    attrib->type = CertParser_Cert_Attrib_Type_NONE;
+
     switch (type)
     {
     case CertParser_Cert_Attrib_Type_PUBLICKEY:
@@ -450,6 +453,9 @@ CertParser_Cert_getAttrib(
     default:
         return OS_ERROR_INVALID_PARAMETER;
     }
+
+    // Only in case of success we assign the type
+    attrib->type = type;
 
     return OS_SUCCESS;
 }
