@@ -69,7 +69,7 @@ static const mbedtls_x509_crt_profile certProfile =
 
 // Private static functions ----------------------------------------------------
 
-seos_err_t
+OS_Error_t
 convertChain(
     const CertParser_Chain_t* chain,
     mbedtls_x509_crt*         mbedtls_chain)
@@ -116,7 +116,7 @@ out:
 
 // Public functions ------------------------------------------------------------
 
-seos_err_t
+OS_Error_t
 CertParser_init(
     CertParser_t**             self,
     const CertParser_Config_t* config)
@@ -142,7 +142,7 @@ CertParser_init(
     return SEOS_SUCCESS;
 }
 
-seos_err_t
+OS_Error_t
 CertParser_free(
     CertParser_t* self,
     const bool    freeChains)
@@ -171,7 +171,7 @@ CertParser_free(
     return SEOS_SUCCESS;
 }
 
-seos_err_t
+OS_Error_t
 CertParser_addTrustedChain(
     CertParser_t*             self,
     const CertParser_Chain_t* chain)
@@ -198,7 +198,7 @@ CertParser_addTrustedChain(
     return SEOS_SUCCESS;
 }
 
-seos_err_t
+OS_Error_t
 CertParser_verifyChain(
     const CertParser_t*       self,
     const size_t              index,
@@ -206,7 +206,7 @@ CertParser_verifyChain(
     CertParser_VerifyFlags_t* flags)
 {
     int rc;
-    seos_err_t err;
+    OS_Error_t err;
     mbedtls_x509_crt ca_chain, cert_chain;
     uint32_t mbedtls_flags;
 
@@ -308,7 +308,7 @@ CertParser_verifyChain(
 
 // --------------------------------- Cert --------------------------------------
 
-seos_err_t
+OS_Error_t
 CertParser_Cert_init(
     CertParser_Cert_t**              self,
     const CertParser_t*              parser,
@@ -317,7 +317,7 @@ CertParser_Cert_init(
     const size_t                     len)
 {
     int rc;
-    seos_err_t err;
+    OS_Error_t err;
     CertParser_Cert_t* cert;
 
     if (NULL == parser || NULL == self || NULL == data)
@@ -387,7 +387,7 @@ err0:
     return err;
 }
 
-seos_err_t
+OS_Error_t
 CertParser_Cert_free(
     CertParser_Cert_t* self)
 {
@@ -406,7 +406,7 @@ CertParser_Cert_free(
     return SEOS_SUCCESS;
 }
 
-seos_err_t
+OS_Error_t
 CertParser_Cert_getAttrib(
     const CertParser_Cert_t*            self,
     const CertParser_Cert_Attrib_Type_t type,
@@ -452,7 +452,7 @@ CertParser_Cert_getAttrib(
 
 // --------------------------------- Chain -------------------------------------
 
-seos_err_t
+OS_Error_t
 CertParser_Chain_init(
     CertParser_Chain_t** self,
     const CertParser_t*  parser)
@@ -477,7 +477,7 @@ CertParser_Chain_init(
     return SEOS_SUCCESS;
 }
 
-seos_err_t
+OS_Error_t
 CertParser_Chain_free(
     CertParser_Chain_t* self,
     const bool          freeCerts)
@@ -505,7 +505,7 @@ CertParser_Chain_free(
     return SEOS_SUCCESS;
 }
 
-seos_err_t
+OS_Error_t
 CertParser_Chain_addCert(
     CertParser_Chain_t*      self,
     const CertParser_Cert_t* cert)
@@ -545,7 +545,7 @@ CertParser_Chain_addCert(
     return SEOS_SUCCESS;
 }
 
-seos_err_t
+OS_Error_t
 CertParser_Chain_getCert(
     const CertParser_Chain_t* self,
     const size_t              index,
@@ -565,7 +565,7 @@ CertParser_Chain_getCert(
     return SEOS_SUCCESS;
 }
 
-seos_err_t
+OS_Error_t
 CertParser_Chain_getLength(
     const CertParser_Chain_t* self,
     size_t*                   len)

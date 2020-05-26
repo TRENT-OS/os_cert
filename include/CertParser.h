@@ -68,26 +68,26 @@ typedef struct CertParser CertParser_t;
 // ---------------------------------- Lib --------------------------------------
 
 // Setup API object.
-seos_err_t
+OS_Error_t
 CertParser_init(
     CertParser_t**             parser,
     const CertParser_Config_t* config);
 
 // Free API and any memory associated internally.
-seos_err_t
+OS_Error_t
 CertParser_free(
     CertParser_t* parser,
     const bool    freeChains);
 
 // Add a trusted certificate chain to the internal "trust store".
-seos_err_t
+OS_Error_t
 CertParser_addTrustedChain(
     CertParser_t*             parser,
     const CertParser_Chain_t* chain);
 
 // In case user is not interested in the actual verification chain, simply
 // check if a chain can be found.
-seos_err_t
+OS_Error_t
 CertParser_verifyChain(
     const CertParser_t*       parser,
     const size_t              index,
@@ -97,7 +97,7 @@ CertParser_verifyChain(
 // --------------------------------- Cert --------------------------------------
 
 // Allocate and fill in a certificate from raw data.
-seos_err_t
+OS_Error_t
 CertParser_Cert_init(
     CertParser_Cert_t**              cert,
     const CertParser_t*              parser,
@@ -106,12 +106,12 @@ CertParser_Cert_init(
     const size_t                     len);
 
 // Free up memory associated with cert.
-seos_err_t
+OS_Error_t
 CertParser_Cert_free(
     CertParser_Cert_t* cert);
 
 // Extract attributes from a certificate.
-seos_err_t
+OS_Error_t
 CertParser_Cert_getAttrib(
     const CertParser_Cert_t*            cert,
     const CertParser_Cert_Attrib_Type_t type,
@@ -120,33 +120,33 @@ CertParser_Cert_getAttrib(
 // --------------------------------- Chain -------------------------------------
 
 // Allocate cert chain with a max. amount of certs it can hold.
-seos_err_t
+OS_Error_t
 CertParser_Chain_init(
     CertParser_Chain_t** chain,
     const CertParser_t*  parser);
 
 // Free up memory associated with a chain (certs need to be freed individually).
-seos_err_t
+OS_Error_t
 CertParser_Chain_free(
     CertParser_Chain_t* chain,
     const bool          freeCerts);
 
 // Add certificate to end of existing cert chain; certificate should not be
 // freed while chain is in use.
-seos_err_t
+OS_Error_t
 CertParser_Chain_addCert(
     CertParser_Chain_t*      chain,
     const CertParser_Cert_t* cert);
 
 // Get pointer to a cert in the cert chain (indexed starting at 0).
-seos_err_t
+OS_Error_t
 CertParser_Chain_getCert(
     const CertParser_Chain_t* chain,
     const size_t              index,
     CertParser_Cert_t const** cert);
 
 // Get length of a chain
-seos_err_t
+OS_Error_t
 CertParser_Chain_getLength(
     const CertParser_Chain_t* chain,
     size_t*                   len);
