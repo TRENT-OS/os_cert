@@ -106,12 +106,12 @@ convertChain(
         }
     }
 
-    return SEOS_SUCCESS;
+    return OS_SUCCESS;
 
 out:
     mbedtls_x509_crt_free(mbedtls_chain);
 
-    return SEOS_ERROR_ABORTED;
+    return OS_ERROR_ABORTED;
 }
 
 // Public functions ------------------------------------------------------------
@@ -125,12 +125,12 @@ CertParser_init(
 
     if (NULL == self || NULL == config)
     {
-        return SEOS_ERROR_INVALID_PARAMETER;
+        return OS_ERROR_INVALID_PARAMETER;
     }
 
     if ((parser = calloc(1, sizeof(CertParser_t))) == NULL)
     {
-        return SEOS_ERROR_INSUFFICIENT_SPACE;
+        return OS_ERROR_INSUFFICIENT_SPACE;
     }
 
     parser->config  = *config;
@@ -139,7 +139,7 @@ CertParser_init(
 
     *self = parser;
 
-    return SEOS_SUCCESS;
+    return OS_SUCCESS;
 }
 
 OS_Error_t
@@ -149,7 +149,7 @@ CertParser_free(
 {
     if (NULL == self)
     {
-        return SEOS_ERROR_INVALID_PARAMETER;
+        return OS_ERROR_INVALID_PARAMETER;
     }
 
     // Free all chains associated with this parser context, and also free the
@@ -168,7 +168,7 @@ CertParser_free(
     }
     free(self);
 
-    return SEOS_SUCCESS;
+    return OS_SUCCESS;
 }
 
 OS_Error_t
@@ -181,21 +181,21 @@ CertParser_addTrustedChain(
 
     if (NULL == self || NULL == chain)
     {
-        return SEOS_ERROR_INVALID_PARAMETER;
+        return OS_ERROR_INVALID_PARAMETER;
     }
 
     sz  = (self->chains + 1) * sizeof(CertParser_Chain_t*);
     ptr = (self->trusted == NULL) ? malloc(sz) : realloc(self->trusted, sz);
     if (ptr == NULL)
     {
-        return SEOS_ERROR_INSUFFICIENT_SPACE;
+        return OS_ERROR_INSUFFICIENT_SPACE;
     }
 
     self->trusted = ptr;
     self->trusted[self->chains] = chain;
     self->chains++;
 
-    return SEOS_SUCCESS;
+    return OS_SUCCESS;
 }
 
 OS_Error_t
@@ -212,20 +212,20 @@ CertParser_verifyChain(
 
     if (NULL == self || NULL == chain || NULL == flags)
     {
-        return SEOS_ERROR_INVALID_PARAMETER;
+        return OS_ERROR_INVALID_PARAMETER;
     }
     if (index >= self->chains)
     {
-        return SEOS_ERROR_NOT_FOUND;
+        return OS_ERROR_NOT_FOUND;
     }
 
     // Since mbedTLS modifies the certificate data structure, we have to
     // re-create it every time we call mbedtls_x509_crt_verify_with_profile()
-    if ((err = convertChain(chain, &cert_chain)) != SEOS_SUCCESS)
+    if ((err = convertChain(chain, &cert_chain)) != OS_SUCCESS)
     {
         return err;
     }
-    if ((err = convertChain(self->trusted[index], &ca_chain)) == SEOS_SUCCESS)
+    if ((err = convertChain(self->trusted[index], &ca_chain)) == OS_SUCCESS)
     {
         rc = mbedtls_x509_crt_verify_with_profile(
                  self->config.hCrypto,
@@ -242,17 +242,17 @@ CertParser_verifyChain(
         /*
          * We consider three error conditions:
          * 1. rc = 0
-         *      cert verification is OK, so we return SEOS_SUCCESS
+         *      cert verification is OK, so we return OS_SUCCESS
          * 2. rc = MBEDTLS_ERR_X509_CERT_VERIFY_FAILED
          *      cert verification failed due to problem with a cert in the chain,
-         *      we return SEOS_ERROR_GENERIC and also a flags value indicating
+         *      we return OS_ERROR_GENERIC and also a flags value indicating
          *      what exactly is the problem
          * 3. rc = anything else
-         *      some other problem occured, we return SEOS_ERROR_ABORTED
+         *      some other problem occured, we return OS_ERROR_ABORTED
          */
-        err = (0 == rc) ? SEOS_SUCCESS :
-              (MBEDTLS_ERR_X509_CERT_VERIFY_FAILED == rc) ? SEOS_ERROR_GENERIC :
-              SEOS_ERROR_ABORTED;
+        err = (0 == rc) ? OS_SUCCESS :
+              (MBEDTLS_ERR_X509_CERT_VERIFY_FAILED == rc) ? OS_ERROR_GENERIC :
+              OS_ERROR_ABORTED;
 
         // Parse the flag value which contains the aggregate of all problems
         // that were encountered during verification
@@ -322,12 +322,12 @@ CertParser_Cert_init(
 
     if (NULL == parser || NULL == self || NULL == data)
     {
-        return SEOS_ERROR_INVALID_PARAMETER;
+        return OS_ERROR_INVALID_PARAMETER;
     }
 
     if ((cert = calloc(1, sizeof(CertParser_Cert_t))) == NULL)
     {
-        return SEOS_ERROR_INSUFFICIENT_SPACE;
+        return OS_ERROR_INSUFFICIENT_SPACE;
     }
 
     // So here is the thing with mbedTLS: For PEM certificates it expects a
@@ -336,7 +336,7 @@ CertParser_Cert_init(
     cert->len = (data[len - 1] == 0x00) ? len : len + 1;
     if ((cert->data = calloc(cert->len, sizeof(uint8_t))) == NULL)
     {
-        rc = SEOS_ERROR_INSUFFICIENT_SPACE;
+        rc = OS_ERROR_INSUFFICIENT_SPACE;
         goto err0;
     }
 
@@ -348,7 +348,7 @@ CertParser_Cert_init(
     // Also, we parse the cert data into an mbedTLS structure so we can check if
     // the provided format is valid and to make extraction of attribues easy.
     mbedtls_x509_crt_init(&cert->mbedtls.cert);
-    err = SEOS_ERROR_ABORTED;
+    err = OS_ERROR_ABORTED;
     switch (encoding)
     {
     case CertParser_Cert_Encoding_DER:
@@ -370,13 +370,13 @@ CertParser_Cert_init(
         }
         break;
     default:
-        err = SEOS_ERROR_INVALID_PARAMETER;
+        err = OS_ERROR_INVALID_PARAMETER;
         goto err1;
     }
 
     *self = cert;
 
-    return SEOS_SUCCESS;
+    return OS_SUCCESS;
 
 err1:
     mbedtls_x509_crt_free(&cert->mbedtls.cert);
@@ -393,7 +393,7 @@ CertParser_Cert_free(
 {
     if (NULL == self)
     {
-        return SEOS_ERROR_INVALID_PARAMETER;
+        return OS_ERROR_INVALID_PARAMETER;
     }
 
     if (self->data != NULL)
@@ -403,7 +403,7 @@ CertParser_Cert_free(
     }
     free(self);
 
-    return SEOS_SUCCESS;
+    return OS_SUCCESS;
 }
 
 OS_Error_t
@@ -422,7 +422,7 @@ CertParser_Cert_getAttrib(
                                                   &attrib->data.publicKey)) != 0)
         {
             Debug_LOG_RET_MBEDTLS("trentos_ssl_cli_export_cert_key", rc);
-            return SEOS_ERROR_ABORTED;
+            return OS_ERROR_ABORTED;
         }
         break;
     case CertParser_Cert_Attrib_Type_SUBJECT:
@@ -431,7 +431,7 @@ CertParser_Cert_getAttrib(
                                        &self->mbedtls.cert.subject)) < 0)
         {
             Debug_LOG_RET_MBEDTLS("mbedtls_x509_dn_gets", rc);
-            return SEOS_ERROR_ABORTED;
+            return OS_ERROR_ABORTED;
         }
         break;
     case CertParser_Cert_Attrib_Type_ISSUER:
@@ -440,14 +440,14 @@ CertParser_Cert_getAttrib(
                                        &self->mbedtls.cert.issuer)) < 0)
         {
             Debug_LOG_RET_MBEDTLS("mbedtls_x509_dn_gets", rc);
-            return SEOS_ERROR_ABORTED;
+            return OS_ERROR_ABORTED;
         }
         break;
     default:
-        return SEOS_ERROR_INVALID_PARAMETER;
+        return OS_ERROR_INVALID_PARAMETER;
     }
 
-    return SEOS_SUCCESS;
+    return OS_SUCCESS;
 }
 
 // --------------------------------- Chain -------------------------------------
@@ -461,12 +461,12 @@ CertParser_Chain_init(
 
     if (NULL == parser || NULL == self)
     {
-        return SEOS_ERROR_INVALID_PARAMETER;
+        return OS_ERROR_INVALID_PARAMETER;
     }
 
     if ((chain = calloc(1, sizeof(CertParser_Chain_t))) == NULL)
     {
-        return SEOS_ERROR_INSUFFICIENT_SPACE;
+        return OS_ERROR_INSUFFICIENT_SPACE;
     }
 
     chain->chain = NULL;
@@ -474,7 +474,7 @@ CertParser_Chain_init(
 
     *self = chain;
 
-    return SEOS_SUCCESS;
+    return OS_SUCCESS;
 }
 
 OS_Error_t
@@ -484,7 +484,7 @@ CertParser_Chain_free(
 {
     if (NULL == self)
     {
-        return SEOS_ERROR_INVALID_PARAMETER;
+        return OS_ERROR_INVALID_PARAMETER;
     }
 
     // Free all certs associated with this chain
@@ -502,7 +502,7 @@ CertParser_Chain_free(
     }
     free(self);
 
-    return SEOS_SUCCESS;
+    return OS_SUCCESS;
 }
 
 OS_Error_t
@@ -515,7 +515,7 @@ CertParser_Chain_addCert(
 
     if (NULL == self || NULL == cert)
     {
-        return SEOS_ERROR_INVALID_PARAMETER;
+        return OS_ERROR_INVALID_PARAMETER;
     }
 
     if (self->certs > 0)
@@ -527,7 +527,7 @@ CertParser_Chain_addCert(
         {
             Debug_LOG_ERROR("Issuer of new cert does not match subject of last " \
                             "cert in chain");
-            return SEOS_ERROR_ABORTED;
+            return OS_ERROR_ABORTED;
         }
     }
 
@@ -536,13 +536,13 @@ CertParser_Chain_addCert(
     ptr = (self->chain == NULL) ? malloc(sz) : realloc(self->chain, sz);
     if (ptr == NULL)
     {
-        return SEOS_ERROR_INSUFFICIENT_SPACE;
+        return OS_ERROR_INSUFFICIENT_SPACE;
     }
     self->chain = ptr;
     self->chain[self->certs] = cert;
     self->certs++;
 
-    return SEOS_SUCCESS;
+    return OS_SUCCESS;
 }
 
 OS_Error_t
@@ -553,16 +553,16 @@ CertParser_Chain_getCert(
 {
     if (NULL == self || NULL == cert)
     {
-        return SEOS_ERROR_INVALID_PARAMETER;
+        return OS_ERROR_INVALID_PARAMETER;
     }
     if (index >= self->certs)
     {
-        return SEOS_ERROR_NOT_FOUND;
+        return OS_ERROR_NOT_FOUND;
     }
 
     *cert = self->chain[index];
 
-    return SEOS_SUCCESS;
+    return OS_SUCCESS;
 }
 
 OS_Error_t
@@ -572,10 +572,10 @@ CertParser_Chain_getLength(
 {
     if (NULL == self || NULL == len)
     {
-        return SEOS_ERROR_INVALID_PARAMETER;
+        return OS_ERROR_INVALID_PARAMETER;
     }
 
     *len = self->certs;
 
-    return SEOS_SUCCESS;
+    return OS_SUCCESS;
 }
