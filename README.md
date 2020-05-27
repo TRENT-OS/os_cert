@@ -1,5 +1,5 @@
-# SEOS Cert Parser
+# OS Cert Parser
 
 ## Dependencies
 
-The SEOS Certificate Parser uses mbedTLS
+The OS Certificate Parser uses mbedTLS
