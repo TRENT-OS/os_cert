@@ -10,7 +10,7 @@ cmake_policy(SET CMP0076 NEW)
 
 # We need to build 3rdparty/mbedtls for this and would like to avoid
 # all users of OS_CERT to include this as well, so we do it here
-seos_use_libs(
+os_use_libs(
     3RDPARTY_MBEDTLS_FOR_CERT
 )
 
