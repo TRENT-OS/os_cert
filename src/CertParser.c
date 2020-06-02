@@ -123,7 +123,7 @@ CertParser_init(
 {
     CertParser_t* parser;
 
-    if (NULL == self || NULL == config)
+    if (NULL == self || NULL == config || NULL == config->hCrypto)
     {
         return OS_ERROR_INVALID_PARAMETER;
     }
@@ -179,7 +179,7 @@ CertParser_addTrustedChain(
     size_t sz;
     void* ptr;
 
-    if (NULL == self || NULL == chain)
+    if (NULL == self || NULL == chain || 0 == chain->certs)
     {
         return OS_ERROR_INVALID_PARAMETER;
     }
@@ -320,7 +320,7 @@ CertParser_Cert_init(
     OS_Error_t err;
     CertParser_Cert_t* cert;
 
-    if (NULL == parser || NULL == self || NULL == data)
+    if (NULL == parser || NULL == self || NULL == data || 0 == len)
     {
         return OS_ERROR_INVALID_PARAMETER;
     }
@@ -414,6 +414,10 @@ CertParser_Cert_getAttrib(
 {
     int rc;
 
+    if (NULL == self || NULL == attrib)
+    {
+        return OS_ERROR_INVALID_PARAMETER;
+    }
     switch (type)
     {
     case CertParser_Cert_Attrib_Type_PUBLICKEY:
