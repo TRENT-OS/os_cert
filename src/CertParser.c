@@ -267,16 +267,6 @@ CertParser_verifyChain(
             *flags |= CertParser_VerifyFlags_INVALID_SIG;
             mbedtls_flags &= ~MBEDTLS_X509_BADCERT_NOT_TRUSTED;
         }
-        if (mbedtls_flags & MBEDTLS_X509_BADCERT_BAD_MD)
-        {
-            *flags |= CertParser_VerifyFlags_INVALID_HASH_ALG;
-            mbedtls_flags &= ~MBEDTLS_X509_BADCERT_BAD_MD;
-        }
-        if (mbedtls_flags & MBEDTLS_X509_BADCERT_BAD_PK)
-        {
-            *flags |= CertParser_VerifyFlags_INVALID_SIG_ALG;
-            mbedtls_flags &= ~MBEDTLS_X509_BADCERT_BAD_PK;
-        }
         if (mbedtls_flags & MBEDTLS_X509_BADCERT_BAD_KEY)
         {
             *flags |= CertParser_VerifyFlags_INVALID_KEY;
@@ -286,15 +276,17 @@ CertParser_verifyChain(
             mbedtls_flags & MBEDTLS_X509_BADCERT_EXT_KEY_USAGE ||
             mbedtls_flags & MBEDTLS_X509_BADCERT_NS_CERT_TYPE)
         {
-            *flags |= CertParser_VerifyFlags_EXTENSION_MISMATCH;
+            *flags |= CertParser_VerifyFlags_EXT_MISMATCH;
             mbedtls_flags &= ~MBEDTLS_X509_BADCERT_KEY_USAGE;
             mbedtls_flags &= ~MBEDTLS_X509_BADCERT_EXT_KEY_USAGE;
             mbedtls_flags &= ~MBEDTLS_X509_BADCERT_NS_CERT_TYPE;
         }
 
         // If there are still bits set, we do not bother further and just return
-        // a generic error (remaining bits may be due to CRL problems or time
-        /// issues, both are currently not supported)
+        // a generic error:
+        // - CRL problems               (CRLs are not supported)
+        // - time issues                (we have no time so time is not checked)
+        // - invalid hash/pk alorithms  (should be detected during cert creation)
         if (mbedtls_flags)
         {
             *flags |= CertParser_VerifyFlags_OTHER_ERROR;
@@ -348,7 +340,12 @@ CertParser_Cert_init(
     // Also, we parse the cert data into an mbedTLS structure so we can check if
     // the provided format is valid and to make extraction of attribues easy.
     mbedtls_x509_crt_init(&cert->mbedtls.cert);
-    err = OS_ERROR_ABORTED;
+
+    // Translate parsing errors due to unkown algos into NOT_SUPPORTED, so it
+    // aligns with the follow-up check. UNKNOWN_SIG_ALG will be returned in cases
+    // where mbedTLS has not been compiled for a certain algorithm. In our case,
+    // mbedTLS may actually provide more algorithms than we want to have as per
+    // the certProfile, so that is why we add a second check below.
     switch (encoding)
     {
     case CertParser_Cert_Encoding_DER:
@@ -357,6 +354,8 @@ CertParser_Cert_init(
                                              cert->len)) != 0)
         {
             Debug_LOG_RET_MBEDTLS("mbedtls_x509_crt_parse_der", rc);
+            err = (rc & MBEDTLS_ERR_X509_UNKNOWN_SIG_ALG) ?
+                  OS_ERROR_NOT_SUPPORTED : OS_ERROR_ABORTED;
             goto err1;
         }
         break;
@@ -366,11 +365,27 @@ CertParser_Cert_init(
                                          cert->len)) != 0)
         {
             Debug_LOG_RET_MBEDTLS("mbedtls_x509_crt_parse", rc);
+            err = (rc & MBEDTLS_ERR_X509_UNKNOWN_SIG_ALG) ?
+                  OS_ERROR_NOT_SUPPORTED : OS_ERROR_ABORTED;
             goto err1;
         }
         break;
     default:
         err = OS_ERROR_INVALID_PARAMETER;
+        goto err1;
+    }
+
+    // The certificate verification checks if a cert has uses only allowed
+    // algorithms for hash and PK. However, to make user experience more
+    // consistent, we do these checks here already so a user cannot even create
+    // a cert that will later fail.
+    if ( !(certProfile.allowed_mds & MBEDTLS_X509_ID_FLAG(
+               cert->mbedtls.cert.sig_md))
+         || !(certProfile.allowed_pks & MBEDTLS_X509_ID_FLAG(
+                  cert->mbedtls.cert.sig_pk)) )
+    {
+        Debug_LOG_ERROR("Certificate PK or HASH algorithm are not supported");
+        err = OS_ERROR_NOT_SUPPORTED;
         goto err1;
     }
 

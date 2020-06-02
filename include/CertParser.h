@@ -23,14 +23,12 @@ typedef enum
 
 typedef enum
 {
-    CertParser_VerifyFlags_NONE                 = 0x00,
-    CertParser_VerifyFlags_INVALID_SIG_ALG      = (1u << 0),
-    CertParser_VerifyFlags_INVALID_HASH_ALG     = (1u << 1),
-    CertParser_VerifyFlags_INVALID_KEY          = (1u << 2),
-    CertParser_VerifyFlags_INVALID_SIG          = (1u << 3),
-    CertParser_VerifyFlags_CN_MISMATCH          = (1u << 4),
-    CertParser_VerifyFlags_EXTENSION_MISMATCH   = (1u << 5),
-    CertParser_VerifyFlags_OTHER_ERROR          = (1u << 6),
+    CertParser_VerifyFlags_NONE           = 0x00,
+    CertParser_VerifyFlags_INVALID_KEY    = (1u << 0),
+    CertParser_VerifyFlags_INVALID_SIG    = (1u << 1),
+    CertParser_VerifyFlags_CN_MISMATCH    = (1u << 2),
+    CertParser_VerifyFlags_EXT_MISMATCH   = (1u << 3),
+    CertParser_VerifyFlags_OTHER_ERROR    = (1u << 4),
 } CertParser_VerifyFlags_t;
 
 typedef enum
