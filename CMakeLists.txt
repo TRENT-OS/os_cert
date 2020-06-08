@@ -25,11 +25,6 @@ target_sources(${PROJECT_NAME}
         "src/CertParser.c"
 )
 
-target_compile_options(${PROJECT_NAME}
-    INTERFACE
-       -Wall
-)
-
 target_include_directories(${PROJECT_NAME}
     INTERFACE
         "include"
