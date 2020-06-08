@@ -14,11 +14,6 @@ os_use_libs(
     3RDPARTY_MBEDTLS_FOR_CERT
 )
 
-if (ENABLE_LINT)
-    set(CMAKE_C_CPPCHECK "cppcheck;--enable=warning;--inline-suppr")
-    set(CMAKE_C_CLANG_TIDY "clang-tidy;-checks=*")
-endif()
-
 #------------------------------------------------------------------------------
 
 project(os_cert C)
