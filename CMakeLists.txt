@@ -21,7 +21,7 @@ endif()
 
 #------------------------------------------------------------------------------
 
-project(seos_cert C)
+project(os_cert C)
 
 add_library(${PROJECT_NAME} INTERFACE)
 
@@ -43,6 +43,6 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     INTERFACE
         3rdparty_mbedtls_for_cert
-        seos_core_api
-        seos_libs
+        os_core_api
+        os_libs
 )
