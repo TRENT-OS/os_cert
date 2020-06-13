@@ -1,6 +1,8 @@
 #
 # CertParser library
 #
+# Copyright (C) 2020, Hensoldt Cyber GmbH
+#
 
 cmake_minimum_required(VERSION 3.13.0)
 
