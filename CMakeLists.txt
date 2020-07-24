@@ -32,12 +32,3 @@ target_link_libraries(${PROJECT_NAME}
         os_core_api
         os_libs
 )
-
-#------------------------------------------------------------------------------
-# if invoked from the OS sandbox, provide a documentation build target
-if (COMMAND os_create_doxygen_target)
-
-    # there are no pre or post steps
-    os_create_doxygen_target(os_cert_doc ":" ":")
-
-endif()
