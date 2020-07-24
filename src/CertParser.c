@@ -15,28 +15,28 @@
 #include <stdio.h>
 #include <string.h>
 
-struct CertParser
+struct OS_CertParser
 {
-    CertParser_Config_t config;
-    CertParser_Chain_t const** trusted;
+    OS_CertParser_Config_t config;
+    OS_CertParserChain_t const** trusted;
     size_t chains;
 };
 
-struct CertParser_Cert
+struct OS_CertParserCert
 {
     uint8_t* data;
     size_t len;
-    CertParser_Cert_Encoding_t encoding;
+    OS_CertParserCert_Encoding_t encoding;
     struct
     {
         mbedtls_x509_crt cert;
     } mbedtls;
 };
 
-struct CertParser_Chain
+struct OS_CertParserChain
 {
     size_t certs;
-    CertParser_Cert_t const** chain;
+    OS_CertParserCert_t** chain;
 };
 
 /*
@@ -71,8 +71,8 @@ static const mbedtls_x509_crt_profile certProfile =
 
 OS_Error_t
 convertChain(
-    const CertParser_Chain_t* chain,
-    mbedtls_x509_crt*         mbedtls_chain)
+    const OS_CertParserChain_t* chain,
+    mbedtls_x509_crt*           mbedtls_chain)
 {
     int rc;
 
@@ -87,12 +87,12 @@ convertChain(
     {
         switch (chain->chain[i]->encoding)
         {
-        case CertParser_Cert_Encoding_DER:
+        case OS_CertParserCert_Encoding_DER:
             rc = mbedtls_x509_crt_parse_der(mbedtls_chain,
                                             chain->chain[i]->data,
                                             chain->chain[i]->len);
             break;
-        case CertParser_Cert_Encoding_PEM:
+        case OS_CertParserCert_Encoding_PEM:
             rc = mbedtls_x509_crt_parse(mbedtls_chain,
                                         chain->chain[i]->data,
                                         chain->chain[i]->len);
@@ -117,18 +117,18 @@ out:
 // Public functions ------------------------------------------------------------
 
 OS_Error_t
-CertParser_init(
-    CertParser_t**             self,
-    const CertParser_Config_t* config)
+OS_CertParser_init(
+    OS_CertParser_Handle_t*       self,
+    const OS_CertParser_Config_t* config)
 {
-    CertParser_t* parser;
+    OS_CertParser_t* parser;
 
     if (NULL == self || NULL == config || NULL == config->hCrypto)
     {
         return OS_ERROR_INVALID_PARAMETER;
     }
 
-    if ((parser = calloc(1, sizeof(CertParser_t))) == NULL)
+    if ((parser = calloc(1, sizeof(OS_CertParser_t))) == NULL)
     {
         return OS_ERROR_INSUFFICIENT_SPACE;
     }
@@ -143,9 +143,9 @@ CertParser_init(
 }
 
 OS_Error_t
-CertParser_free(
-    CertParser_t* self,
-    const bool    freeChains)
+OS_CertParser_free(
+    OS_CertParser_Handle_t self,
+    const bool             freeChains)
 {
     if (NULL == self)
     {
@@ -158,7 +158,7 @@ CertParser_free(
     {
         for (size_t i = 0; i < self->chains; i++)
         {
-            CertParser_Chain_free((CertParser_Chain_t*) self->trusted[i], true);
+            OS_CertParserChain_free((OS_CertParserChain_t*) self->trusted[i], true);
         }
     }
 
@@ -172,9 +172,9 @@ CertParser_free(
 }
 
 OS_Error_t
-CertParser_addTrustedChain(
-    CertParser_t*             self,
-    const CertParser_Chain_t* chain)
+OS_CertParser_addTrustedChain(
+    OS_CertParser_Handle_t            self,
+    const OS_CertParserChain_Handle_t chain)
 {
     size_t sz;
     void* ptr;
@@ -184,7 +184,7 @@ CertParser_addTrustedChain(
         return OS_ERROR_INVALID_PARAMETER;
     }
 
-    sz  = (self->chains + 1) * sizeof(CertParser_Chain_t*);
+    sz  = (self->chains + 1) * sizeof(OS_CertParserChain_t*);
     ptr = (self->trusted == NULL) ? malloc(sz) : realloc(self->trusted, sz);
     if (ptr == NULL)
     {
@@ -199,11 +199,11 @@ CertParser_addTrustedChain(
 }
 
 OS_Error_t
-CertParser_verifyChain(
-    const CertParser_t*       self,
-    const size_t              index,
-    const CertParser_Chain_t* chain,
-    CertParser_VerifyFlags_t* flags)
+OS_CertParser_verifyChain(
+    const OS_CertParser_Handle_t      self,
+    const size_t                      index,
+    const OS_CertParserChain_Handle_t chain,
+    OS_CertParser_VerifyFlags_t*      flags)
 {
     int rc;
     OS_Error_t err;
@@ -256,27 +256,27 @@ CertParser_verifyChain(
 
         // Parse the flag value which contains the aggregate of all problems
         // that were encountered during verification
-        *flags = CertParser_VerifyFlags_NONE;
+        *flags = OS_CertParser_VerifyFlags_NONE;
         if (mbedtls_flags & MBEDTLS_X509_BADCERT_CN_MISMATCH)
         {
-            *flags |= CertParser_VerifyFlags_CN_MISMATCH;
+            *flags |= OS_CertParser_VerifyFlags_CN_MISMATCH;
             mbedtls_flags &= ~MBEDTLS_X509_BADCERT_CN_MISMATCH;
         }
         if (mbedtls_flags & MBEDTLS_X509_BADCERT_NOT_TRUSTED)
         {
-            *flags |= CertParser_VerifyFlags_INVALID_SIG;
+            *flags |= OS_CertParser_VerifyFlags_INVALID_SIG;
             mbedtls_flags &= ~MBEDTLS_X509_BADCERT_NOT_TRUSTED;
         }
         if (mbedtls_flags & MBEDTLS_X509_BADCERT_BAD_KEY)
         {
-            *flags |= CertParser_VerifyFlags_INVALID_KEY;
+            *flags |= OS_CertParser_VerifyFlags_INVALID_KEY;
             mbedtls_flags &= ~MBEDTLS_X509_BADCERT_BAD_KEY;
         }
         if (mbedtls_flags & MBEDTLS_X509_BADCERT_KEY_USAGE ||
             mbedtls_flags & MBEDTLS_X509_BADCERT_EXT_KEY_USAGE ||
             mbedtls_flags & MBEDTLS_X509_BADCERT_NS_CERT_TYPE)
         {
-            *flags |= CertParser_VerifyFlags_EXT_MISMATCH;
+            *flags |= OS_CertParser_VerifyFlags_EXT_MISMATCH;
             mbedtls_flags &= ~MBEDTLS_X509_BADCERT_KEY_USAGE;
             mbedtls_flags &= ~MBEDTLS_X509_BADCERT_EXT_KEY_USAGE;
             mbedtls_flags &= ~MBEDTLS_X509_BADCERT_NS_CERT_TYPE;
@@ -289,7 +289,7 @@ CertParser_verifyChain(
         // - invalid hash/pk alorithms  (should be detected during cert creation)
         if (mbedtls_flags)
         {
-            *flags |= CertParser_VerifyFlags_OTHER_ERROR;
+            *flags |= OS_CertParser_VerifyFlags_OTHER_ERROR;
         }
     }
 
@@ -301,23 +301,23 @@ CertParser_verifyChain(
 // --------------------------------- Cert --------------------------------------
 
 OS_Error_t
-CertParser_Cert_init(
-    CertParser_Cert_t**              self,
-    const CertParser_t*              parser,
-    const CertParser_Cert_Encoding_t encoding,
-    const uint8_t*                   data,
-    const size_t                     len)
+OS_CertParserCert_init(
+    OS_CertParserCert_Handle_t*        self,
+    const OS_CertParser_Handle_t       parser,
+    const OS_CertParserCert_Encoding_t encoding,
+    const uint8_t*                     data,
+    const size_t                       len)
 {
     int rc;
     OS_Error_t err;
-    CertParser_Cert_t* cert;
+    OS_CertParserCert_t* cert;
 
     if (NULL == parser || NULL == self || NULL == data || 0 == len)
     {
         return OS_ERROR_INVALID_PARAMETER;
     }
 
-    if ((cert = calloc(1, sizeof(CertParser_Cert_t))) == NULL)
+    if ((cert = calloc(1, sizeof(OS_CertParserCert_t))) == NULL)
     {
         return OS_ERROR_INSUFFICIENT_SPACE;
     }
@@ -348,7 +348,7 @@ CertParser_Cert_init(
     // the certProfile, so that is why we add a second check below.
     switch (encoding)
     {
-    case CertParser_Cert_Encoding_DER:
+    case OS_CertParserCert_Encoding_DER:
         if ((rc = mbedtls_x509_crt_parse_der(&cert->mbedtls.cert,
                                              cert->data,
                                              cert->len)) != 0)
@@ -359,7 +359,7 @@ CertParser_Cert_init(
             goto err1;
         }
         break;
-    case CertParser_Cert_Encoding_PEM:
+    case OS_CertParserCert_Encoding_PEM:
         if ((rc = mbedtls_x509_crt_parse(&cert->mbedtls.cert,
                                          cert->data,
                                          cert->len)) != 0)
@@ -403,8 +403,8 @@ err0:
 }
 
 OS_Error_t
-CertParser_Cert_free(
-    CertParser_Cert_t* self)
+OS_CertParserCert_free(
+    OS_CertParserCert_Handle_t self)
 {
     if (NULL == self)
     {
@@ -422,10 +422,10 @@ CertParser_Cert_free(
 }
 
 OS_Error_t
-CertParser_Cert_getAttrib(
-    const CertParser_Cert_t*            self,
-    const CertParser_Cert_Attrib_Type_t type,
-    CertParser_Cert_Attrib_t*           attrib)
+OS_CertParserCert_getAttrib(
+    const OS_CertParserCert_Handle_t     self,
+    const OS_CertParserCert_AttribType_t type,
+    OS_CertParserCert_Attrib_t*          attrib)
 {
     int rc;
 
@@ -434,11 +434,11 @@ CertParser_Cert_getAttrib(
         return OS_ERROR_INVALID_PARAMETER;
     }
 
-    attrib->type = CertParser_Cert_Attrib_Type_NONE;
+    attrib->type = OS_CertParserCert_AttribType_NONE;
 
     switch (type)
     {
-    case CertParser_Cert_Attrib_Type_PUBLICKEY:
+    case OS_CertParserCert_AttribType_PUBLICKEY:
         if ((rc = trentos_ssl_cli_export_cert_key(self->mbedtls.cert.sig_pk,
                                                   self->mbedtls.cert.pk.pk_ctx,
                                                   &attrib->data.publicKey)) != 0)
@@ -447,18 +447,18 @@ CertParser_Cert_getAttrib(
             return OS_ERROR_ABORTED;
         }
         break;
-    case CertParser_Cert_Attrib_Type_SUBJECT:
+    case OS_CertParserCert_AttribType_SUBJECT:
         if ((rc = mbedtls_x509_dn_gets(attrib->data.subject,
-                                       CertParser_Cert_Attrib_Subject_MAX_LEN,
+                                       OS_CertParserCert_Attrib_Subject_MAX_LEN,
                                        &self->mbedtls.cert.subject)) < 0)
         {
             Debug_LOG_RET_MBEDTLS("mbedtls_x509_dn_gets", rc);
             return OS_ERROR_ABORTED;
         }
         break;
-    case CertParser_Cert_Attrib_Type_ISSUER:
+    case OS_CertParserCert_AttribType_ISSUER:
         if ((rc = mbedtls_x509_dn_gets(attrib->data.issuer,
-                                       CertParser_Cert_Attrib_Issuer_MAX_LEN,
+                                       OS_CertParserCert_Attrib_Issuer_MAX_LEN,
                                        &self->mbedtls.cert.issuer)) < 0)
         {
             Debug_LOG_RET_MBEDTLS("mbedtls_x509_dn_gets", rc);
@@ -478,18 +478,18 @@ CertParser_Cert_getAttrib(
 // --------------------------------- Chain -------------------------------------
 
 OS_Error_t
-CertParser_Chain_init(
-    CertParser_Chain_t** self,
-    const CertParser_t*  parser)
+OS_CertParserChain_init(
+    OS_CertParserChain_Handle_t* self,
+    const OS_CertParser_Handle_t parser)
 {
-    CertParser_Chain_t* chain;
+    OS_CertParserChain_t* chain;
 
     if (NULL == parser || NULL == self)
     {
         return OS_ERROR_INVALID_PARAMETER;
     }
 
-    if ((chain = calloc(1, sizeof(CertParser_Chain_t))) == NULL)
+    if ((chain = calloc(1, sizeof(OS_CertParserChain_t))) == NULL)
     {
         return OS_ERROR_INSUFFICIENT_SPACE;
     }
@@ -503,9 +503,9 @@ CertParser_Chain_init(
 }
 
 OS_Error_t
-CertParser_Chain_free(
-    CertParser_Chain_t* self,
-    const bool          freeCerts)
+OS_CertParserChain_free(
+    OS_CertParserChain_Handle_t self,
+    const bool                  freeCerts)
 {
     if (NULL == self)
     {
@@ -517,7 +517,7 @@ CertParser_Chain_free(
     {
         for (size_t i = 0; i < self->certs; i++)
         {
-            CertParser_Cert_free((CertParser_Cert_t*)self->chain[i]);
+            OS_CertParserCert_free((OS_CertParserCert_t*)self->chain[i]);
         }
     }
 
@@ -531,9 +531,9 @@ CertParser_Chain_free(
 }
 
 OS_Error_t
-CertParser_Chain_addCert(
-    CertParser_Chain_t*      self,
-    const CertParser_Cert_t* cert)
+OS_CertParserChain_addCert(
+    OS_CertParserChain_Handle_t      self,
+    const OS_CertParserCert_Handle_t cert)
 {
     size_t sz;
     void* ptr;
@@ -557,7 +557,7 @@ CertParser_Chain_addCert(
     }
 
     // Add pointer to original cert
-    sz  = (self->certs + 1) * sizeof(CertParser_Cert_t*);
+    sz  = (self->certs + 1) * sizeof(OS_CertParserCert_t*);
     ptr = (self->chain == NULL) ? malloc(sz) : realloc(self->chain, sz);
     if (ptr == NULL)
     {
@@ -571,10 +571,10 @@ CertParser_Chain_addCert(
 }
 
 OS_Error_t
-CertParser_Chain_getCert(
-    const CertParser_Chain_t* self,
-    const size_t              index,
-    CertParser_Cert_t const** cert)
+OS_CertParserChain_getCert(
+    const OS_CertParserChain_Handle_t self,
+    const size_t                      index,
+    OS_CertParserCert_Handle_t*       cert)
 {
     if (NULL == self || NULL == cert)
     {
@@ -591,9 +591,9 @@ CertParser_Chain_getCert(
 }
 
 OS_Error_t
-CertParser_Chain_getLength(
-    const CertParser_Chain_t* self,
-    size_t*                   len)
+OS_CertParserChain_getLength(
+    const OS_CertParserChain_Handle_t self,
+    size_t*                           len)
 {
     if (NULL == self || NULL == len)
     {
