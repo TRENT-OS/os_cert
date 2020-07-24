@@ -18,7 +18,9 @@ add_library(${PROJECT_NAME} INTERFACE)
 
 target_sources(${PROJECT_NAME}
     INTERFACE
-        "src/CertParser.c"
+        "src/OS_CertParser.c"
+        "src/OS_CertParserCert.c"
+        "src/OS_CertParserChain.c"
 )
 
 target_include_directories(${PROJECT_NAME}
