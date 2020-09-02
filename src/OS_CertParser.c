@@ -56,6 +56,51 @@ out:
     return OS_ERROR_ABORTED;
 }
 
+static inline OS_CertParser_VerifyFlags_t
+translateMbedTlsVerifyFlags(
+    uint32_t mbedtls_flags)
+{
+    // Parse the flag value which contains the aggregate of all problems
+    // that were encountered during verification
+    OS_CertParser_VerifyFlags_t flags = OS_CertParser_VerifyFlags_NONE;
+    if (mbedtls_flags & MBEDTLS_X509_BADCERT_CN_MISMATCH)
+    {
+        flags |= OS_CertParser_VerifyFlags_CN_MISMATCH;
+        mbedtls_flags &= ~MBEDTLS_X509_BADCERT_CN_MISMATCH;
+    }
+    if (mbedtls_flags & MBEDTLS_X509_BADCERT_NOT_TRUSTED)
+    {
+        flags |= OS_CertParser_VerifyFlags_INVALID_SIG;
+        mbedtls_flags &= ~MBEDTLS_X509_BADCERT_NOT_TRUSTED;
+    }
+    if (mbedtls_flags & MBEDTLS_X509_BADCERT_BAD_KEY)
+    {
+        flags |= OS_CertParser_VerifyFlags_INVALID_KEY;
+        mbedtls_flags &= ~MBEDTLS_X509_BADCERT_BAD_KEY;
+    }
+    if (mbedtls_flags & MBEDTLS_X509_BADCERT_KEY_USAGE ||
+        mbedtls_flags & MBEDTLS_X509_BADCERT_EXT_KEY_USAGE ||
+        mbedtls_flags & MBEDTLS_X509_BADCERT_NS_CERT_TYPE)
+    {
+        flags |= OS_CertParser_VerifyFlags_EXT_MISMATCH;
+        mbedtls_flags &= ~MBEDTLS_X509_BADCERT_KEY_USAGE;
+        mbedtls_flags &= ~MBEDTLS_X509_BADCERT_EXT_KEY_USAGE;
+        mbedtls_flags &= ~MBEDTLS_X509_BADCERT_NS_CERT_TYPE;
+    }
+
+    // If there are still bits set, we do not bother further and just return
+    // a generic error:
+    // - CRL problems               (CRLs are not supported)
+    // - time issues                (we have no time so time is not checked)
+    // - invalid hash/pk alorithms  (should be detected during cert creation)
+    if (mbedtls_flags)
+    {
+        flags |= OS_CertParser_VerifyFlags_OTHER_ERROR;
+    }
+
+    return flags;
+}
+
 // Public functions ------------------------------------------------------------
 
 OS_Error_t
@@ -196,43 +241,7 @@ OS_CertParser_verifyChain(
               (MBEDTLS_ERR_X509_CERT_VERIFY_FAILED == rc) ? OS_ERROR_GENERIC :
               OS_ERROR_ABORTED;
 
-        // Parse the flag value which contains the aggregate of all problems
-        // that were encountered during verification
-        *flags = OS_CertParser_VerifyFlags_NONE;
-        if (mbedtls_flags & MBEDTLS_X509_BADCERT_CN_MISMATCH)
-        {
-            *flags |= OS_CertParser_VerifyFlags_CN_MISMATCH;
-            mbedtls_flags &= ~MBEDTLS_X509_BADCERT_CN_MISMATCH;
-        }
-        if (mbedtls_flags & MBEDTLS_X509_BADCERT_NOT_TRUSTED)
-        {
-            *flags |= OS_CertParser_VerifyFlags_INVALID_SIG;
-            mbedtls_flags &= ~MBEDTLS_X509_BADCERT_NOT_TRUSTED;
-        }
-        if (mbedtls_flags & MBEDTLS_X509_BADCERT_BAD_KEY)
-        {
-            *flags |= OS_CertParser_VerifyFlags_INVALID_KEY;
-            mbedtls_flags &= ~MBEDTLS_X509_BADCERT_BAD_KEY;
-        }
-        if (mbedtls_flags & MBEDTLS_X509_BADCERT_KEY_USAGE ||
-            mbedtls_flags & MBEDTLS_X509_BADCERT_EXT_KEY_USAGE ||
-            mbedtls_flags & MBEDTLS_X509_BADCERT_NS_CERT_TYPE)
-        {
-            *flags |= OS_CertParser_VerifyFlags_EXT_MISMATCH;
-            mbedtls_flags &= ~MBEDTLS_X509_BADCERT_KEY_USAGE;
-            mbedtls_flags &= ~MBEDTLS_X509_BADCERT_EXT_KEY_USAGE;
-            mbedtls_flags &= ~MBEDTLS_X509_BADCERT_NS_CERT_TYPE;
-        }
-
-        // If there are still bits set, we do not bother further and just return
-        // a generic error:
-        // - CRL problems               (CRLs are not supported)
-        // - time issues                (we have no time so time is not checked)
-        // - invalid hash/pk alorithms  (should be detected during cert creation)
-        if (mbedtls_flags)
-        {
-            *flags |= OS_CertParser_VerifyFlags_OTHER_ERROR;
-        }
+        *flags = translateMbedTlsVerifyFlags(mbedtls_flags);
     }
 
     mbedtls_x509_crt_free(&ca_chain);
