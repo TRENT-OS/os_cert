@@ -156,8 +156,6 @@ OS_CertParserCert_getAttrib(
     const OS_CertParserCert_AttribType_t type,
     OS_CertParserCert_Attrib_t*          attrib)
 {
-    int rc;
-
     if (NULL == self || NULL == attrib)
     {
         return OS_ERROR_INVALID_PARAMETER;
@@ -167,6 +165,8 @@ OS_CertParserCert_getAttrib(
 
     switch (type)
     {
+        int rc;
+
     case OS_CertParserCert_AttribType_PUBLICKEY:
         if ((rc = trentos_ssl_cli_export_cert_key(self->mbedtls.cert.sig_pk,
                                                   self->mbedtls.cert.pk.pk_ctx,
