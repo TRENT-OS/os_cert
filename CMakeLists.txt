@@ -32,6 +32,6 @@ target_link_libraries(${PROJECT_NAME}
     INTERFACE
         3rdparty_mbedtls_for_cert
         os_core_api
-        os_libs
+        lib_debug
         os_crypto
 )

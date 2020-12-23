@@ -6,7 +6,7 @@
 
 #include "OS_CertParser.h"
 
-#include "LibDebug/Debug.h"
+#include "lib_debug/Debug.h"
 
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/error.h"
