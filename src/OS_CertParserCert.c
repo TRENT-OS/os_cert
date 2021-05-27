@@ -178,7 +178,7 @@ OS_CertParserCert_getAttrib(
         break;
     case OS_CertParserCert_AttribType_SUBJECT:
         if ((rc = mbedtls_x509_dn_gets(attrib->data.subject,
-                                       OS_CertParserCert_Subject_MAX_LEN,
+                                       OS_CertParserCert_Subject_MAX_SIZE,
                                        &self->mbedtls.cert.subject)) < 0)
         {
             Debug_LOG_RET_MBEDTLS("mbedtls_x509_dn_gets", rc);
@@ -187,7 +187,7 @@ OS_CertParserCert_getAttrib(
         break;
     case OS_CertParserCert_AttribType_ISSUER:
         if ((rc = mbedtls_x509_dn_gets(attrib->data.issuer,
-                                       OS_CertParserCert_Issuer_MAX_LEN,
+                                       OS_CertParserCert_Issuer_MAX_SIZE,
                                        &self->mbedtls.cert.issuer)) < 0)
         {
             Debug_LOG_RET_MBEDTLS("mbedtls_x509_dn_gets", rc);
