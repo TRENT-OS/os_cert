@@ -1,5 +1,5 @@
 #
-# OS CertParser library
+# OS CertParser
 #
 # Copyright (C) 2020, Hensoldt Cyber GmbH
 #

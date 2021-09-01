@@ -1,5 +1,8 @@
-# OS Cert Parser
+# OS CertParser
+
+OS CertParser provides functionality for parsing and validating certificates.
 
 ## Dependencies
 
-The OS Certificate Parser uses mbedTLS
+- mbedTLS (provides the actual certificate implementation)
+- OS Crypto
