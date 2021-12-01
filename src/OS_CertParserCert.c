@@ -168,11 +168,11 @@ OS_CertParserCert_getAttrib(
         int rc;
 
     case OS_CertParserCert_AttribType_PUBLICKEY:
-        if ((rc = trentos_ssl_cli_export_cert_key(self->mbedtls.cert.sig_pk,
-                                                  self->mbedtls.cert.pk.pk_ctx,
-                                                  &attrib->data.publicKey)) != 0)
+        if ((rc = trentos_x509_crt_export_cert_key(self->mbedtls.cert.sig_pk,
+                                                   self->mbedtls.cert.pk.pk_ctx,
+                                                   &attrib->data.publicKey)) != 0)
         {
-            Debug_LOG_RET_MBEDTLS("trentos_ssl_cli_export_cert_key", rc);
+            Debug_LOG_RET_MBEDTLS("trentos_x509_crt_export_cert_key", rc);
             return OS_ERROR_ABORTED;
         }
         break;
